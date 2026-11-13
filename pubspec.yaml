@@ -39,8 +39,6 @@ dependency_overrides:
     path: packages/media_kit_libs_windows_video
 
 flutter:
-  config:
-    enable-swift-package-manager: false
   uses-material-design: true
   assets:
     - assets/video_enhancement/
