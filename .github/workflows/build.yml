@@ -24,14 +24,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Android SDK + build-tools + platform 【官方action自带安装，指定包】
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: "platforms;android-34 build-tools;34.0.0"
           accept-android-sdk-licenses: true
 
-      # 单独稳定安装NDK，nttld/setup-ndk是社区经过大量验证的ndk action
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
         with:
@@ -45,12 +43,15 @@ jobs:
           channel: stable
           cache: true
 
-      # 【关键】全局替换gradle源，防止gradle同步google卡住
-      - name: Replace Gradle repositories to aliyun mirror
+      # 改成：文件存在才替换，不存在就跳过，不会报错
+      - name: Replace Gradle mirror (if file exists)
         run: |
-          sed -i 's|google()|maven { url "https://maven.aliyun.com/repository/google" }|g' android/build.gradle
-          sed -i 's|mavenCentral()|maven { url "https://maven.aliyun.com/repository/central" }|g' android/build.gradle
-          sed -i 's|jcenter()|maven { url "https://maven.aliyun.com/repository/jcenter" }|g' android/build.gradle
+          if [ -f android/build.gradle ]; then
+            sed -i 's|google()|maven { url "https://maven.aliyun.com/repository/google" }|g' android/build.gradle
+            sed -i 's|mavenCentral()|maven { url "https://maven.aliyun.com/repository/central" }|g' android/build.gradle
+          else
+            echo "android/build.gradle not found, skip gradle mirror replace"
+          fi
 
       - name: Compile native library
         run: python3 scripts/build_native.py --platform android --abi arm64-v8a --all-sources
