@@ -23,15 +23,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK & NDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: manishiori/android-sdk-action@v1
         with:
-          accept-android-sdk-licenses: true
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;27.0.12077973
-            platform-tools
+          platform: android-34
+          build-tools: 34.0.0
+          ndk: 27.0.12077973
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
