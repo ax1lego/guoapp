@@ -17,16 +17,23 @@ jobs:
           sudo apt update
           sudo apt install -y python3 python3-pip git curl unzip wget
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK & NDK
+        uses: android-actions/setup-android@v3
+        with:
+          sdk-version: "34"
+          ndk-version: "27.0.12077973"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: stable
-
-      # 改用Flutter自带方式管理Android SDK，避开setup-android这个有bug的action
-      - name: Accept Android SDK licenses
-        run: |
-          yes | flutter doctor --android-licenses
 
       - name: Build native lib (all-sources)
         run: |
