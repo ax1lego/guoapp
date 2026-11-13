@@ -16,7 +16,7 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip unzip wget curl
+          sudo apt install -y python3 python3-pip unzip curl
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -24,24 +24,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ========== 手动部署 Android SDK + 阿里云镜像，绕开 dl.google.com ==========
-      - name: Download Android cmdline-tools
-        run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          wget https://mirrors.aliyun.com/android/android/repository/commandlinetools-linux-12266719_latest.zip -O cmd.zip
-          unzip -q cmd.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          rm cmd.zip
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> $GITHUB_PATH
+      # Android SDK + build-tools + platform 【官方action自带安装，指定包】
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-34 build-tools;34.0.0"
+          accept-android-sdk-licenses: true
 
-      - name: Configure sdkmanager mirror & accept license
-        run: |
-          mkdir -p ~/.android
-          echo "### Mirrored by aliyun" > ~/.android/repositories.cfg
-          sdkmanager --list --no_https --proxy=none < <(echo y)
-          # 安装需要的包
-          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "ndk;27.0.12077973" < <(echo y)
+      # 单独稳定安装NDK，nttld/setup-ndk是社区经过大量验证的ndk action
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+          add-to-path: true
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -50,10 +45,12 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Gradle 国内镜像替换（关键！防止gradle同步卡死google）
+      # 【关键】全局替换gradle源，防止gradle同步google卡住
+      - name: Replace Gradle repositories to aliyun mirror
         run: |
           sed -i 's|google()|maven { url "https://maven.aliyun.com/repository/google" }|g' android/build.gradle
           sed -i 's|mavenCentral()|maven { url "https://maven.aliyun.com/repository/central" }|g' android/build.gradle
+          sed -i 's|jcenter()|maven { url "https://maven.aliyun.com/repository/jcenter" }|g' android/build.gradle
 
       - name: Compile native library
         run: python3 scripts/build_native.py --platform android --abi arm64-v8a --all-sources
