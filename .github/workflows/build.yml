@@ -26,8 +26,12 @@ jobs:
       - name: Setup Android SDK & NDK
         uses: android-actions/setup-android@v3
         with:
-          sdk-version: "34"
-          ndk-version: "27.0.12077973"
+          accept-android-sdk-licenses: true
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+            ndk;27.0.12077973
+            platform-tools
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
